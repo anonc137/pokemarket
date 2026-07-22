@@ -1,21 +1,92 @@
-<script type="module">
-import { auth } from "./firebase.js";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+</head>
 
-import {
-    createUserWithEmailAndPassword
-} from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+<body>
 
-document.getElementById("registerBtn").addEventListener("click", async () => {
+    <h1>Create an Account</h1>
 
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
+    <input
+        id="username"
+        type="text"
+        placeholder="Username">
 
-    try {
-        await createUserWithEmailAndPassword(auth, email, password);
-        alert("Account created!");
-    } catch (error) {
-        alert(error.message);
-    }
+    <br><br>
 
-});
-</script>
+    <input
+        id="email"
+        type="email"
+        placeholder="Email">
+
+    <br><br>
+
+    <input
+        id="password"
+        type="password"
+        placeholder="Password">
+
+    <br><br>
+
+    <button id="registerBtn">
+        Create Account
+    </button>
+
+    <script type="module">
+
+        import { auth, db } from "./firebase.js";
+
+        import {
+            createUserWithEmailAndPassword
+        } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+
+        import {
+            doc,
+            setDoc
+        } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+
+        document.getElementById("registerBtn").addEventListener("click", async () => {
+
+            const username = document.getElementById("username").value;
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+
+            try {
+
+                const userCredential = await createUserWithEmailAndPassword(
+                    auth,
+                    email,
+                    password
+                );
+
+                const user = userCredential.user;
+
+                await setDoc(doc(db, "users", user.uid), {
+
+                    username: username,
+                    email: email,
+                    bio: "",
+                    rating: 0,
+                    totalRatings: 0,
+                    listings: 0,
+                    createdAt: new Date()
+
+                });
+
+                window.location.href = "dashboard.html";
+
+            } catch (error) {
+
+                alert(error.message);
+
+            }
+
+        });
+
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+</head>
+
+<body>
+
+    <h1>Login</h1>
+
+    <input
+        id="email"
+        type="email"
+        placeholder="Email">
+
+    <br><br>
+
+    <input
+        id="password"
+        type="password"
+        placeholder="Password">
+
+    <br><br>
+
+    <button id="loginBtn">
+        Log In
+    </button>
+
+    <script type="module">
+
+        import { auth } from "./firebase.js";
+
+        import {
+            signInWithEmailAndPassword
+        } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+
+        document.getElementById("loginBtn").addEventListener("click", async () => {
+
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+
+            try {
+
+                await signInWithEmailAndPassword(auth, email, password);
+
+                window.location.href = "dashboard.html";
+
+            } catch (error) {
+
+                alert(error.message);
+
+            }
+
+        });
+
+    </script>
+
+</body>
+</html>
