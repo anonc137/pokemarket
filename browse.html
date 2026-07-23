@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Browse Listings - PokeMarket</title>
+
+    <link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+    <header>
+
+        <h1>PokeMarket</h1>
+
+        <nav>
+
+            <a href="index.html">Home</a>
+            <a href="browse.html">Browse Listings</a>
+            <a href="dashboard.html">Dashboard</a>
+
+        </nav>
+
+    </header>
+
+    <main>
+
+        <h2>Browse Listings</h2>
+
+        <div id="listingContainer"></div>
+
+    </main>
+
+    <script type="module">
+
+        import { db } from "./firebase.js";
+
+        import {
+
+            collection,
+            getDocs
+
+        } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+
+        const container = document.getElementById("listingContainer");
+
+        try {
+
+            const snapshot = await getDocs(
+                collection(db, "listings")
+            );
+
+            snapshot.forEach((doc) => {
+
+                const listing = doc.data();
+
+                container.innerHTML += `
+
+                    <div class="listingCard">
+
+                        <h2>${listing.title}</h2>
+
+                        <p><strong>Game:</strong> ${listing.game}</p>
+
+                        <p><strong>Price:</strong> £${listing.price}</p>
+
+                        <a href="listing.html?id=${doc.id}">
+                            View Listing
+                        </a>
+
+                    </div>
+
+                    <hr>
+
+                `;
+
+            });
+
+            if (snapshot.empty) {
+
+                container.innerHTML = "<p>No listings have been posted yet.</p>";
+
+            }
+
+        }
+
+        catch (error) {
+
+            console.error(error);
+
+            container.innerHTML = "<p>Failed to load listings.</p>";
+
+        }
+
+    </script>
+
+</body>
+
+</html>

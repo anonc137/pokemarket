@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Listing - PokeMarket</title>
+
+    <link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+<header>
+
+    <h1>PokeMarket</h1>
+
+    <nav>
+
+        <a href="index.html">Home</a>
+        <a href="browse.html">Browse Listings</a>
+        <a href="dashboard.html">Dashboard</a>
+
+    </nav>
+
+</header>
+
+<main>
+
+    <div id="listingContainer">
+
+        <p>Loading listing...</p>
+
+    </div>
+
+</main>
+
+<script type="module">
+
+import { db } from "./firebase.js";
+import { featureCategories } from "./features.js";
+
+import {
+
+    doc,
+    getDoc
+
+} from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+
+const featureLookup = {};
+
+for (const category in featureCategories) {
+
+    featureCategories[category].forEach(feature => {
+
+        featureLookup[feature.id] = feature.label;
+
+    });
+
+}
+
+const params = new URLSearchParams(window.location.search);
+
+const listingId = params.get("id");
+
+const container = document.getElementById("listingContainer");
+
+if (!listingId) {
+
+    container.innerHTML = "<h2>Listing not found.</h2>";
+
+}
+else {
+
+    try {
+
+        const docRef = doc(db, "listings", listingId);
+
+        const docSnap = await getDoc(docRef);
+
+        if (!docSnap.exists()) {
+
+            container.innerHTML = "<h2>Listing does not exist.</h2>";
+
+        }
+        else {
+
+            const listing = docSnap.data();
+
+            let featuresHTML = "";
+
+            listing.features.forEach(feature => {
+
+    featuresHTML += `<li>${featureLookup[feature] || feature}</li>`;
+
+});
+
+            let highlightsHTML = "";
+
+            listing.highlights.forEach(highlight => {
+
+                highlightsHTML += `<li>${highlight}</li>`;
+
+            });
+
+            container.innerHTML = `
+
+                <h1>${listing.title}</h1>
+
+                <h3>${listing.game}</h3>
+
+                <h2>£${listing.price}</h2>
+
+                <hr>
+
+                <h2>Description</h2>
+
+                <p>${listing.description}</p>
+
+                <hr>
+
+                <h2>Key Attractions</h2>
+
+                <ul>
+
+                    ${highlightsHTML}
+
+                </ul>
+
+                <hr>
+
+                <h2>This Account Includes</h2>
+
+                <ul>
+
+                    ${featuresHTML}
+
+                </ul>
+
+            `;
+
+        }
+
+    }
+
+    catch(error){
+
+        console.error(error);
+
+        container.innerHTML = "<h2>Error loading listing.</h2>";
+
+    }
+
+}
+
+</script>
+
+</body>
+
+</html>

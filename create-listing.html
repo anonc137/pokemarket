@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Listing - PokeMarket</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header>
+
+    <h1>Create Listing</h1>
+
+</header>
+
+<main>
+
+<form id="listingForm">
+
+    <h2>Basic Information</h2>
+
+    <label for="title">Listing Title</label><br>
+
+    <input
+        type="text"
+        id="title"
+        placeholder="e.g. Level 50 Pokémon GO Account"
+        required>
+
+    <br><br>
+
+    <label for="game">Game</label><br>
+
+    <select id="game" required>
+
+        <option value="">Select a Game</option>
+
+        <option>Pokémon GO</option>
+
+        <option>Pokémon Scarlet</option>
+
+        <option>Pokémon Violet</option>
+
+        <option>Pokémon HOME</option>
+
+        <option>Pokémon Sword</option>
+
+        <option>Pokémon Shield</option>
+
+        <option>Pokémon Legends: Arceus</option>
+
+        <option>Other</option>
+
+    </select>
+
+    <br><br>
+
+    <label for="description">Description</label><br>
+
+    <textarea
+        id="description"
+        rows="8"
+        placeholder="Describe the account in detail..."
+        required></textarea>
+
+    <br><br>
+
+    <h2>Key Attractions</h2>
+
+    <p>
+        Add the biggest attractions of the account one at a time.
+    </p>
+
+    <input
+        type="text"
+        id="highlightInput"
+        placeholder="Example: Shiny Mew">
+
+    <button
+        type="button"
+        id="addHighlightBtn">
+        Add
+    </button>
+
+    <br><br>
+
+    <div id="highlightList"></div>
+
+    <br>
+
+    <h2>This Account Includes</h2>
+
+    <div id="featureList"></div>
+
+    <br>
+
+    <h2>Price (£)</h2>
+
+    <input
+        type="number"
+        id="price"
+        min="1"
+        step="0.01"
+        placeholder="75.00"
+        required>
+
+    <br><br>
+
+    <h2>Images</h2>
+
+    <input
+        type="file"
+        id="images"
+        multiple
+        accept="image/*">
+
+    <br><br>
+
+    <button type="submit">
+        Publish Listing
+    </button>
+    </form>
+
+</main>
+
+<script type="module">
+
+    import { auth, db } from "./firebase.js";
+
+import {
+    collection,
+    addDoc,
+    serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+
+// ----------------------------------------
+// Account Features
+// ----------------------------------------
+
+import { featureCategories } from "./features.js";
+
+// ----------------------------------------
+// Automatically Generate Checkboxes
+// ----------------------------------------
+
+const featureList = document.getElementById("featureList");
+
+for (const category in featureCategories) {
+
+    // Category heading
+
+    const heading = document.createElement("h3");
+
+    heading.textContent = category;
+
+    featureList.appendChild(heading);
+
+    // Checkboxes
+
+    featureCategories[category].forEach(feature => {
+
+        const label = document.createElement("label");
+
+        const checkbox = document.createElement("input");
+
+        checkbox.type = "checkbox";
+        checkbox.name = "features";
+        checkbox.value = feature.id;
+
+        label.appendChild(checkbox);
+
+        label.append(" " + feature.label);
+
+        featureList.appendChild(label);
+
+        featureList.appendChild(document.createElement("br"));
+
+    });
+
+    featureList.appendChild(document.createElement("br"));
+
+}
+// ----------------------------------------
+// Highlight Tags
+// ----------------------------------------
+
+const highlights = [];
+
+const highlightInput = document.getElementById("highlightInput");
+const highlightList = document.getElementById("highlightList");
+
+function refreshHighlights() {
+
+    highlightList.innerHTML = "";
+
+    highlights.forEach((text, index) => {
+
+        const tag = document.createElement("div");
+
+        tag.style.display = "inline-block";
+        tag.style.margin = "5px";
+        tag.style.padding = "8px 12px";
+        tag.style.border = "1px solid black";
+        tag.style.borderRadius = "20px";
+
+        tag.innerHTML = `
+            ${text}
+            <button
+                type="button"
+                data-index="${index}"
+                class="removeHighlightBtn"
+                style="margin-left:8px;">
+                ✕
+            </button>
+        `;
+
+        highlightList.appendChild(tag);
+
+    });
+
+    document.querySelectorAll(".removeHighlightBtn").forEach(button => {
+
+        button.addEventListener("click", () => {
+
+            const index = Number(button.dataset.index);
+
+            highlights.splice(index, 1);
+
+            refreshHighlights();
+
+        });
+
+    });
+
+}
+
+document.getElementById("addHighlightBtn").addEventListener("click", () => {
+
+    const text = highlightInput.value.trim();
+
+    if (text === "") return;
+
+    highlights.push(text);
+
+    highlightInput.value = "";
+
+    refreshHighlights();
+
+});
+
+highlightInput.addEventListener("keydown", (event) => {
+
+    if (event.key === "Enter") {
+
+        event.preventDefault();
+
+        document.getElementById("addHighlightBtn").click();
+
+    }
+
+});
+
+// ----------------------------------------
+// Form Submission
+// ----------------------------------------
+
+document.getElementById("listingForm").addEventListener("submit", async (event) => {
+
+    event.preventDefault();
+
+    const features = [];
+
+    document
+        .querySelectorAll('input[name="features"]:checked')
+        .forEach(box => {
+
+            features.push(box.value);
+
+        });
+
+    const listing = {
+
+        title: document.getElementById("title").value,
+
+        game: document.getElementById("game").value,
+
+        description: document.getElementById("description").value,
+
+        highlights: highlights,
+
+        features: features,
+
+        price: Number(document.getElementById("price").value)
+
+        // Images will be added later with Firebase Storage.
+
+    };
+
+    const user = auth.currentUser;
+
+if (!user) {
+
+    alert("You must be logged in to create a listing.");
+
+    return;
+
+}
+
+try {
+
+    await addDoc(collection(db, "listings"), {
+
+        sellerUID: user.uid,
+
+        title: listing.title,
+
+        game: listing.game,
+
+        description: listing.description,
+
+        highlights: listing.highlights,
+
+        features: listing.features,
+
+        price: listing.price,
+
+        createdAt: serverTimestamp()
+
+    });
+
+    alert("Listing published successfully!");
+
+    window.location.href = "dashboard.html";
+
+}
+catch (error) {
+
+    console.error(error);
+
+    alert(error.message);
+
+}
+
+});
+
+</script>
+
+</body>
+</html>
